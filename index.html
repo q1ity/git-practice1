@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Курс валют</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 1.5em;
+      text-align: center;
+    }
+    .rate {
+      font-size: 2em;
+      color: #2a9d8f;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .date {
+      text-align: center;
+      font-size: 1em;
+      margin-top: 10px;
+      color: #555;
+    }
+    .error {
+      color: #e63946;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Курс доллара (ЦБ РФ)</h1>
+    <div id="rate" class="rate">Загрузка...</div>
+    <div id="date" class="date"></div>
+  </div>
+
+  <script>
+    // Отображение текущей даты
+    function showDate() {
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      document.getElementById('date').textContent = 'Дата: ${formattedDate}';
+    }
+
+    // Получение курса доллара
+    async function getUSDRate() {
+      const output = document.getElementById('rate');
+      try {
+        const response = await fetch('https://www.cbr.ru/scripts/XML_daily.asp');
+        const xmlText = await response.text();
+
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(xmlText, 'text/xml');
+
+        const valutes = xml.getElementsByTagName('Valute');
+        let usdRate = null;
+
+        for (let i = 0; i < valutes.length; i++) {
+          const charCode = valutes[i].getElementsByTagName('CharCode')[0].textContent;
+          if (charCode === 'USD') {
+            usdRate = valutes[i].getElementsByTagName('Value')[0].textContent;
+            break;
+          }
+        }
+
+        if (usdRate) {
+          output.textContent = '1 USD = ${usdRate} ₽';
+        } else {
+          output.textContent = 'Курс не найден';
+          output.className = 'error';
+        }
+      } catch (error) {
+        output.textContent = 'Ошибка загрузки данных';
+        output.className = 'error';
+        console.error('Ошибка при получении курса валют:', error);
+      }
+    }
+
+    showDate();
+    getUSDRate();
+  </script>
+</body>
+</html>
